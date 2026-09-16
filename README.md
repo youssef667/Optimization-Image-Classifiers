@@ -1,193 +1,123 @@
-# Numerical Optimization: Gradient Descent & Newton-Raphson
+# Major Task 1 — Nonlinear System Optimization: Gradient Descent, Newton-Raphson & Line Search
 
-This project implements and compares two numerical optimization methods — **Gradient Descent** and **Newton-Raphson** — for solving a nonlinear system of three equations.
-
-The project formulates the system as a nonlinear least-squares optimization problem and uses **SymPy** for symbolic differentiation and **NumPy** for numerical computation.
+This project solves a nonlinear system of three equations by reformulating it as an unconstrained
+least-squares minimization problem, then solving that problem with three different numerical
+optimization strategies: **fixed-step Gradient Descent**, **Newton-Raphson**, and **Gradient
+Descent with an optimal line search (Brent's method)**. Symbolic differentiation (via SymPy) is
+used first to derive and verify the closed-form Gradient vector and Hessian matrix that the
+numerical methods rely on.
 
 ## Problem Formulation
 
-The project considers the following nonlinear functions:
+The system consists of three nonlinear equations in `x1, x2, x3`:
 
-$$
-g_1(x_1,x_2,x_3)
-= 3x_1-\cos(x_2x_3)-0.5
-$$
+```
+g1(x1,x2,x3) = 3*x1 - cos(x2*x3) - 0.5
+g2(x1,x2,x3) = x1^2 - 81*(x2 + 0.1)^2 + sin(x3) + 1.06
+g3(x1,x2,x3) = exp(-x1*x2) + 20*x3 + (10*pi - 3)/3
+```
 
-$$
-g_2(x_1,x_2,x_3)
-= x_1^2-81(x_2+0.1)^2+\sin(x_3)+1.06
-$$
+These are combined into a single scalar objective function:
 
-$$
-g_3(x_1,x_2,x_3)
-= e^{-x_1x_2}+20x_3+\frac{10\pi-3}{3}
-$$
+```
+F(x1,x2,x3) = 0.5*g1^2 + 0.5*g2^2 + 0.5*g3^2
+```
 
-These equations are converted into the following objective function:
+Driving `F` to its minimum (ideally `F ≈ 0`) drives `g1`, `g2`, and `g3` toward zero simultaneously,
+which is exactly the solution of the original nonlinear system.
 
-$$
-F(x_1,x_2,x_3) = \frac{1}{2}g_1^2 + \frac{1}{2}g_2^2 + \frac{1}{2}g_3^2
-$$
+## Files
 
-Minimizing \(F\) drives the values of \(g_1\), \(g_2\), and \(g_3\) toward zero, providing a numerical solution to the nonlinear system.
-
----
+| File | Purpose |
+|---|---|
+| `Major_Task1_A&B.py` | **Parts A & B** — Symbolic derivation. Uses SymPy to compute the 3×1 Gradient vector `∇F` and the 3×3 Hessian matrix `H` of `F` analytically, and prints their shapes. |
+| `Major_Task1_C.py` | **Part C** — Fixed-step-size **Gradient Descent**. Numerically evaluates the (hand-derived, closed-form) gradient each iteration and updates `X ← X − α·∇F(X)` with a constant learning rate. |
+| `Major_Task1_D.py` | **Part D** — **Newton-Raphson Method**. Computes both the gradient and the Hessian at every iteration and updates `X ← X − H⁻¹·∇F(X)`, using the Hessian inverse in place of a fixed learning rate. |
+| `Major_Task1_E.py` | **Part E** — Gradient Descent with an **optimal line search**. At each iteration, instead of using a fixed or matrix-based step, the optimal step size `α` along the current gradient direction is found via 1-D minimization (`scipy.optimize.brent`) of `φ(α) = F(X − α·∇F(X))`. |
 
 ## Methods
 
-### 1. Gradient Descent
+### Part A & B — Symbolic Gradient & Hessian
+Uses `sympy.diff` to differentiate `F` with respect to `x1, x2, x3` to build the gradient, then
+differentiates each gradient component again to build the full Hessian matrix. This provides the
+exact analytical expressions used (and hard-coded) in Parts C–E, and serves as a correctness check
+for those manually derived formulas.
 
-The Gradient Descent implementation updates the solution using:
+### Part C — Gradient Descent (fixed step)
 
-$$
-x_{k+1}=x_k-\alpha\nabla F(x_k)
-$$
-
-where:
-
-* \(\alpha = 0.0001\) is the learning rate.
-* \(\nabla F\) is the gradient of the objective function.
-* The initial point is:
-
-$$
-x_0=[0,0,0]^T
-$$
-
-The algorithm terminates when the gradient magnitude becomes smaller than the specified tolerance.
-
-### 2. Newton-Raphson
-
-The Newton-Raphson implementation uses both the gradient and Hessian matrix:
-
-**xₖ₊₁ = xₖ − α∇F(xₖ)**
-
-where:
-
-* \(\nabla F(x_k)\) is the gradient.
-* \(H(x_k)\) is the Hessian matrix of \(F\).
-* The Hessian is recalculated at every iteration.
-
-Two initial conditions are used to demonstrate the behavior of the method from different starting points:
-
-```text
-[0, 0, 0]
+```
+x_(k+1) = x_k − α · ∇F(x_k)
 ```
 
-and
+- Learning rate: `α = 0.0027`
+- Initial point: `X0 = [0.071, -0.2, 0.06]`
+- Convergence tolerance: `ε = 1e-12` on the gradient magnitude `‖∇F‖`
+- Max iterations: `100`
 
-```text
-[0.77, 0.79, 0.79]
+### Part D — Newton-Raphson Method
+
+```
+x_(k+1) = x_k − H(x_k)⁻¹ · ∇F(x_k)
 ```
 
----
+- Initial point: `X0 = [0, 0, 0]`
+- Convergence tolerance: `ε = 1e-12`
+- The Hessian is recomputed and re-inverted (`np.linalg.inv`) at every iteration
+- Max iterations: `100`
 
-## Features
+### Part E — Gradient Descent with Optimal Line Search
 
-* Symbolic formulation of nonlinear equations using **SymPy**
-* Automatic calculation of the gradient
-* Automatic calculation of the Hessian matrix
-* Numerical evaluation using `lambdify`
-* Gradient Descent implementation
-* Newton-Raphson implementation
-* Configurable convergence tolerance
-* Iteration tracking
-* Gradient magnitude tracking
-* Objective-function tracking
-* Convergence plots using Matplotlib
-
-## Technologies
-
-* **Python**
-* **NumPy** — numerical computation and matrix operations
-* **SymPy** — symbolic mathematics, differentiation, and Hessian calculation
-* **Matplotlib** — convergence visualization
-
-## Project Structure
-
-```text
-.
-├── ci_project_gradient_(a,b,c).py
-├── ci_project_the_Newton-Raphson's_method.py
-└── README.md
+```
+x_(k+1) = x_k − α*_k · ∇F(x_k),   where α*_k = argmin_α F(x_k − α·∇F(x_k))
 ```
 
-> The original implementations were developed in Google Colab and later exported to Python scripts.
+- Initial point: `X0 = [0, 0, 0]`
+- Convergence tolerance: `ε = 1e-12`
+- At each step, `α*_k` is found with `scipy.optimize.brent`, avoiding the need to hand-tune a
+  learning rate
+- Loop runs until `‖∇F‖ < ε` (no fixed iteration cap)
 
-## Installation
+## Gradient Descent vs. Newton-Raphson vs. Line Search
 
-Clone the repository:
+| Method | Step Size | Info Used per Iteration | Cost per Iteration | Notes |
+|---|---|---|---|---|
+| Gradient Descent (C) | Fixed `α` | Gradient only | Low | Sensitive to the choice of `α`; can be slow or diverge |
+| Newton-Raphson (D) | `H⁻¹` | Gradient + Hessian | High (matrix inversion) | Fast local convergence, but costly and sensitive to initial point |
+| GD + Line Search (E) | Optimal `α*` per step | Gradient + 1-D search | Medium | No manual tuning of `α`; adapts step size automatically |
+
+## Requirements
 
 ```bash
-git clone <repository-url>
-cd <repository-name>
+pip install numpy sympy scipy matplotlib
 ```
 
-Install the required dependencies:
+## Running the Scripts
 
 ```bash
-pip install numpy sympy matplotlib
+python "Major_Task1_A&B.py"   # Symbolic gradient & Hessian
+python "Major_Task1_C.py"     # Gradient Descent (fixed step)
+python "Major_Task1_D.py"     # Newton-Raphson
+python "Major_Task1_E.py"     # Gradient Descent with line search
 ```
 
-## Running the Project
-
-Run the Gradient Descent implementation:
-
-```bash
-python "ci_project_gradient_(a,b,c).py"
-```
-
-Run the Newton-Raphson implementation:
-
-```bash
-python "ci_project_the_Newton-Raphson's_method.py"
-```
-
-Each implementation prints iteration information and generates a convergence plot showing the behavior of the gradient magnitude and objective function.
-
-## Gradient Descent vs. Newton-Raphson
-
-Both methods optimize the same objective function, but they use different information to determine the next iteration.
-
-| Method           | Information Used   | Main Update                         | Main Parameter |
-| ---------------- | ------------------ | ----------------------------------- | -------------- |
-| Gradient Descent | Gradient           | \(x_{k+1}=x_k-\alpha\nabla F(x_k)\) | Learning rate  |
-| Newton-Raphson   | Gradient + Hessian | \(x_{k+1}=x_k-H^{-1}\nabla F\)      | Hessian        |
-
-Gradient Descent generally uses simpler calculations per iteration but may require many iterations depending on the learning rate and shape of the objective function.
-
-Newton-Raphson incorporates second-order information through the Hessian, allowing it to make more informed updates but requiring additional computation at each iteration.
-
-## Convergence Visualization
-
-Both implementations track:
-
-* **Gradient magnitude** — used as the convergence criterion.
-* **Objective function value** — used to observe how the optimization progresses.
-
-The resulting plots provide a visual representation of the convergence behavior over successive iterations.
+Each numerical script prints the gradient magnitude and objective value at every iteration, prints
+the final solution `[x1, x2, x3]`, and produces a convergence plot (gradient magnitude and
+objective function value vs. iteration number) using Matplotlib.
 
 ## Notes
 
-The Newton-Raphson implementation uses matrix inversion to calculate \(H^{-1}\). In larger numerical optimization problems, solving the linear system directly is generally preferable to explicitly computing a matrix inverse.
-
-The project is intended as an educational implementation of numerical optimization techniques and demonstrates the practical use of symbolic differentiation combined with numerical algorithms.
-
-## Screenshots
-
-### Gradient Descent
-
-![Gradient Descent Output](pics/Gradient-Descent.png)
-
-### Newton-Raphson — Initial Point (0, 0, 0)
-
-![Newton-Raphson Output](pics/Newton-Raphson-2.png)
-
-### Newton-Raphson — Initial Point (0.77, 0.79, 0.79)
-
-![Newton-Raphson Output](pics/Newton-Raphson.png)
+- The Newton-Raphson implementation explicitly computes `H⁻¹` via `np.linalg.inv`. For larger
+  systems, solving the linear system `H·Δx = ∇F` directly (e.g. `np.linalg.solve`) is generally
+  preferable to explicitly inverting the Hessian.
+- Parts C and D use hand-derived closed-form gradient (and, for D, Hessian) expressions rather than
+  calling into SymPy at runtime, for numerical performance; Part A & B exist to derive/verify those
+  expressions symbolically.
+- This project is intended as an educational implementation comparing first-order (gradient-based)
+  and second-order (Hessian-based) numerical optimization techniques, along with the effect of a
+  fixed vs. adaptively-chosen step size.
 
 ## Authors
 
-* Youssef Malak
-* Bavly Ehab
-* Bassam Sobhy
+- Youssef Malak
+- Bavly Ehab
+- Bassam Sobhy
