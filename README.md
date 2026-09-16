@@ -104,6 +104,20 @@ Each numerical script prints the gradient magnitude and objective value at every
 the final solution `[x1, x2, x3]`, and produces a convergence plot (gradient magnitude and
 objective function value vs. iteration number) using Matplotlib.
 
+## Screenshots
+
+### Part C — Gradient Descent (fixed step)
+
+![Gradient Descent Output](pics/Major_Task_1C.png)
+
+### Part D — Newton-Raphson Method
+
+![Newton-Raphson Output](pics/Major_Task_1D.png)
+
+### Part E — Gradient Descent with Optimal Line Search
+
+![Line Search Output](pics/Major_Task_1E.png)
+
 ## Notes
 
 - The Newton-Raphson implementation explicitly computes `H⁻¹` via `np.linalg.inv`. For larger
