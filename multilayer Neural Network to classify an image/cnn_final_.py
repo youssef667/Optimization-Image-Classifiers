@@ -16,12 +16,9 @@ Original file is located at
 *   Paula Ashraf Sobhy
 """
 
-# Commented out IPython magic to ensure Python compatibility.
-# Use the below code to make sure that you select TensorFlow 2.0 in Colab
-try:
-#   %tensorflow_version 2.x
-except Exception:
-  pass
+import tensorflow as tf
+
+print(tf.__version__)
 
 # Helper libraries
 import numpy as np
